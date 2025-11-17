@@ -1,3 +1,4 @@
+import express, { Request, Response } from 'express';
 import puppeteer from 'puppeteer';
 
 async function getProjectDetails(projectId: string) {
@@ -35,30 +36,30 @@ async function getProjectDetails(projectId: string) {
   }
 }
 
-const server = Bun.serve({
-  port: 3000,
-  async fetch(req) {
-    const url = new URL(req.url);
+// Serveur Express avec Node.js
+const app = express();
+const PORT = process.env.PORT || 3001;
 
-    if (url.pathname.startsWith('/project/')) {
-      const projectId = url.pathname.split('/project/')[1];
+// Endpoint GET /project/:id
+app.get('/project/:id', async (req: Request, res: Response) => {
+  const projectId = req.params.id;
 
-      if (!projectId) {
-        return new Response(JSON.stringify({ error: 'Project ID is required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
+  if (!projectId) {
+    return res.status(400).json({ error: 'Project ID is required' });
+  }
 
-      const result = await getProjectDetails(projectId);
+  const result = await getProjectDetails(projectId);
 
-      return new Response(JSON.stringify(result), {
-        status: result.success ? 200 : 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+  return res.status(result.success ? 200 : 500).json(result);
+});
 
-    return new Response('API Puppeteer - Use /project/:id', { status: 404 });
-  },
+// Route par défaut
+app.get('/', (req: Request, res: Response) => {
+  res.send('API Puppeteer - Use /project/:id');
+});
+
+// Démarrage du serveur
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
 
