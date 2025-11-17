@@ -9,10 +9,16 @@ async function getProjectDetails(projectId: string) {
 
     await page.goto(`https://www.codeur.com/projects/${projectId}`, { waitUntil: 'networkidle2' });
 
+    // Récupère le titre de l'offre
+    const title = await page.$eval('h1.text-3xl', el => (el as HTMLElement).innerText.trim());
+
+    // Récupère la description du projet
     const description = await page.$eval('.project-description.break-words .content', el => (el as HTMLElement).innerText.trim());
 
+    // Récupère le budget indicatif
     const budget = await page.$eval('.project-details .flex.items-start span.font-semibold', el => (el as HTMLElement).innerText.trim());
 
+    // Récupère les profils recherchés
     const profiles = await page.$$eval('.project-details .flex.items-start span.font-semibold a', els =>
       els.map(el => (el as HTMLElement).innerText.trim())
     );
@@ -21,6 +27,7 @@ async function getProjectDetails(projectId: string) {
       success: true,
       data: {
         projectId,
+        title,
         description,
         budget,
         profiles
