@@ -44,93 +44,113 @@ async function getProjectDetails(projectId: string) {
 }
 
 async function makeOffer(projectId: string, email: string, password: string, amount: number, duration: number, message: string) {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: false,
+    defaultViewport: null,
+    args: ['--start-maximized']
+  });
 
   try {
     const page = await browser.newPage();
 
-    await page.goto(`https://www.codeur.com/projects/${projectId}`, { waitUntil: 'networkidle2' });
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Étape 1 : Va directement sur la page de connexion
+    console.log('📍 Étape 1: Navigation vers la page de connexion');
+    await page.goto('https://www.codeur.com/users/sign_in', { waitUntil: 'networkidle2' });
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Clique sur "Se connecter"
-    const signInLinkSelector = 'a[href="/users/sign_in"]';
-    await page.waitForSelector(signInLinkSelector, { timeout: 5000 });
-    await page.click(signInLinkSelector);
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
-
-    // Rempli l'email
+    // Étape 2 : Rempli l'email
+    console.log('📍 Étape 2: Remplissage de l\'email');
     const emailSelector = 'input[name="user[email]"]';
     await page.waitForSelector(emailSelector, { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 200));
     await page.type(emailSelector, email);
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Rempli le mot de passe
+    // Étape 3 : Rempli le mot de passe
+    console.log('📍 Étape 3: Remplissage du mot de passe');
     const passwordSelector = 'input[name="user[password]"]';
     await page.waitForSelector(passwordSelector, { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 200));
     await page.type(passwordSelector, password);
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Clique sur le bouton de connexion
+    // Étape 4 : Clique sur le bouton de connexion
+    console.log('📍 Étape 4: Clic sur le bouton de connexion');
     const submitLoginSelector = 'input[type="submit"][value="Se connecter"]';
     await page.waitForSelector(submitLoginSelector, { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 200));
     await page.click(submitLoginSelector);
     await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    console.log('✅ Connexion réussie');
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Retourne sur la page du projet
+    // Étape 5 : Va sur la page du projet
+    console.log('📍 Étape 5: Navigation vers la page du projet');
     await page.goto(`https://www.codeur.com/projects/${projectId}`, { waitUntil: 'networkidle2' });
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    const offerButtonSelector = `a.btn.btn-primary[href="/projects/${projectId}/offers/new"]`;
-
-    let success = false;
     try {
-      await page.waitForSelector(offerButtonSelector, { timeout: 5000 });
-      await page.click(offerButtonSelector);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await page.waitForSelector('a[data-remote="true"]', { timeout: 10000, visible: true });
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      const amountSelector = 'input[name="offer[amount]"]';
-      await page.waitForSelector(amountSelector, { timeout: 5000 });
-      await page.click(amountSelector);
-      await page.type(amountSelector, amount.toString());
-
-      const durationSelector = 'input[name="offer[duration]"]';
-      await page.waitForSelector(durationSelector, { timeout: 5000 });
-      await page.click(durationSelector);
-      await page.type(durationSelector, duration.toString());
-
-      const messageSelector = 'textarea[name="offer[comments_attributes][0][content]"]';
-      await page.waitForSelector(messageSelector, { timeout: 5000 });
-      await page.click(messageSelector);
-      await page.type(messageSelector, message);
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const submitSelector = 'input[type="submit"][value="Publier mon offre"]';
-      await page.waitForSelector(submitSelector, { timeout: 5000 });
-      await page.click(submitSelector);
-
-      success = true;
+      await page.evaluate(() => {
+        const button = document.querySelector('a[data-remote="true"]') as HTMLElement;
+        if (button) {
+          button.click();
+        }
+      });
       await new Promise(resolve => setTimeout(resolve, 3000));
-
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
+      console.log('⚠️  Erreur lors du clic sur "Faire une offre"');
+      throw error;
     }
+
+    const amountSelector = 'input[name="offer[amount]"]';
+    await page.waitForSelector(amountSelector, { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await page.click(amountSelector);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await page.type(amountSelector, amount.toString());
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const durationSelector = 'input[name="offer[duration]"]';
+    await page.waitForSelector(durationSelector, { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await page.click(durationSelector);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await page.type(durationSelector, duration.toString());
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const messageSelector = 'textarea[name="offer[comments_attributes][0][content]"]';
+    await page.waitForSelector(messageSelector, { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await page.click(messageSelector);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await page.type(messageSelector, message);
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const submitSelector = 'input[type="submit"][value="Publier mon offre"]';
+    await page.waitForSelector(submitSelector, { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await page.click(submitSelector);
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    console.log('✅ Offre publiée avec succès !');
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     return {
       success: true,
-      message: success ? 'Offre publiée avec succès' : 'Erreur lors du processus'
+      message: 'Offre publiée avec succès'
     };
   } catch (error) {
+    console.log('❌ Erreur:', error instanceof Error ? error.message : 'Unknown error');
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     };
-  } finally {
-    await browser.close();
   }
+  // Note: On ne ferme PAS le navigateur pour inspection
 }
 
 // Serveur Express avec Node.js
