@@ -43,11 +43,11 @@ async function getProjectDetails(projectId: string) {
   }
 }
 
-async function makeOffer(projectId: string, email: string, password: string, amount: number, duration: number, message: string) {
+async function makeOffer(projectId: string, email: string, password: string, amount: number, duration: number, message: string, prod: boolean = false) {
   const browser = await puppeteer.launch({
-    headless: false,
-    defaultViewport: null,
-    args: ['--start-maximized']
+    headless: prod,
+    defaultViewport: prod ? undefined : null,
+    args: prod ? [] : ['--start-maximized']
   });
 
   try {
@@ -149,8 +149,13 @@ async function makeOffer(projectId: string, email: string, password: string, amo
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     };
+  } finally {
+    // En mode prod, on ferme le navigateur
+    if (prod) {
+      await browser.close();
+    }
+    // En mode dev, on laisse le navigateur ouvert pour inspection
   }
-  // Note: On ne ferme PAS le navigateur pour inspection
 }
 
 // Serveur Express avec Node.js
@@ -176,7 +181,7 @@ app.get('/project/:id', async (req: Request, res: Response) => {
 // Endpoint POST /project/:id/make-offer
 app.post('/project/:id/make-offer', async (req: Request, res: Response) => {
   const projectId = req.params.id;
-  const { email, password, amount, duration, message } = req.body;
+  const { email, password, amount, duration, message, prod } = req.body;
 
   if (!projectId) {
     return res.status(400).json({ error: 'Project ID is required' });
@@ -186,7 +191,10 @@ app.post('/project/:id/make-offer', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Email, password, amount, duration and message are required in the request body' });
   }
 
-  const result = await makeOffer(projectId, email, password, amount, duration, message);
+  // prod est optionnel, par défaut false
+  const isProd = prod === true;
+
+  const result = await makeOffer(projectId, email, password, amount, duration, message, isProd);
 
   return res.status(result.success ? 200 : 500).json(result);
 });
